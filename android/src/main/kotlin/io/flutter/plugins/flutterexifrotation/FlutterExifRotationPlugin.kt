@@ -48,6 +48,7 @@ class FlutterExifRotationPlugin : FlutterPlugin, MethodCallHandler {
         val photoPath = call.argument<String>("path")
         val save = argument(call, "save", false)!!
         val orientation: Int
+        val rotation: Float?
         try {
             val ei = ExifInterface(photoPath!!)
 
@@ -55,16 +56,22 @@ class FlutterExifRotationPlugin : FlutterPlugin, MethodCallHandler {
                 ExifInterface.TAG_ORIENTATION,
                 ExifInterface.ORIENTATION_UNDEFINED
             )
+            rotation = when (orientation) {
+                ExifInterface.ORIENTATION_ROTATE_90 -> 90f
+                ExifInterface.ORIENTATION_ROTATE_180 -> 180f
+                ExifInterface.ORIENTATION_ROTATE_270 -> 270f
+                ExifInterface.ORIENTATION_NORMAL -> null
+                else -> null
+            }
+            if (rotation == null) {
+                // Just return original
+                result.success(photoPath)
+                return
+            }
             val options = BitmapFactory.Options()
             options.inPreferredConfig = Bitmap.Config.ARGB_8888
             val bitmap = BitmapFactory.decodeFile(photoPath, options)
-            val rotatedBitmap = when (orientation) {
-                ExifInterface.ORIENTATION_ROTATE_90 -> rotate(bitmap, 90f)
-                ExifInterface.ORIENTATION_ROTATE_180 -> rotate(bitmap, 180f)
-                ExifInterface.ORIENTATION_ROTATE_270 -> rotate(bitmap, 270f)
-                ExifInterface.ORIENTATION_NORMAL -> bitmap
-                else -> bitmap
-            }
+            val rotatedBitmap = rotate(bitmap, rotation)
             val file =
                 File(photoPath) // the File to save , append increasing numeric counter to prevent files from getting overwritten.
             val fOut = FileOutputStream(file)

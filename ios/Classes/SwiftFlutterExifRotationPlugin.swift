@@ -36,7 +36,8 @@ public class SwiftFlutterExifRotationPlugin: NSObject, FlutterPlugin {
 extension UIImage {
     func updateImageOrientationUpSide() -> UIImage? {
         if self.imageOrientation == .up {
-            return self
+            // just use original encoding
+            return nil
         }
         
         UIGraphicsBeginImageContextWithOptions(self.size, false, self.scale)
